@@ -1,2 +1,4 @@
-./install-ppa
-./test
+/install-ppa
+/remove-ppa
+/list-ppa
+/test
