@@ -40,5 +40,7 @@ install-ppa -ppa 'ppa:mozillateam/ppa' -key-id '0AB215679C571D1C8325275B9BDB3D89
 
 ## TODO
 
+ * improve `remove-ppa` when removing a line from a file. Make sure it's done nicely
  * add support for private PPAs
  * add command to remove a PPA
+ * add tests (especially for `remove-ppa`)

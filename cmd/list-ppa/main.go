@@ -5,13 +5,15 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"path"
 
 	"github.com/gjolly/install-ppa/pkg/ppa"
 )
 
 func main() {
 	config, err := parseArgs()
-	ppas, err := ppa.ListPPAs("/etc/apt/sources.list.d")
+	sourceListDir := path.Join(config.APTConfigPath, "sources.list.d")
+	ppas, err := ppa.ListPPAs(sourceListDir)
 	if err != nil {
 		log.Fatal("failed to list PPAs:", err)
 	}
@@ -29,19 +31,26 @@ func main() {
 }
 
 type Config struct {
-	OutputFormat string
+	OutputFormat  string
+	APTConfigPath string
 }
 
 func parseArgs() (*Config, error) {
 	var config Config
 
 	format := flag.String("format", "text", "Output format (text, json)")
+	aptConfigPath := flag.String("apt-config", "", "APT Config Path")
 
 	flag.Parse()
 
 	config.OutputFormat = *format
 	if config.OutputFormat != "text" && config.OutputFormat != "json" {
 		return &config, fmt.Errorf("output format unknown: %v", config.OutputFormat)
+	}
+
+	config.APTConfigPath = *aptConfigPath
+	if *aptConfigPath == "" {
+		config.APTConfigPath = "/etc/apt"
 	}
 
 	return &config, nil
