@@ -46,7 +46,7 @@ func removePPA(ppaShort string, dryrun bool, aptConfPath string) error {
 				ToDelete: false,
 			}
 		} else {
-			info.Matches += 1
+			info.Matches++
 		}
 
 		keyringFilePath := path.Join(aptConfPath, "keyrings", path.Base(ppa.KeyringFile))
@@ -56,7 +56,7 @@ func removePPA(ppaShort string, dryrun bool, aptConfPath string) error {
 				ToDelete: false,
 			}
 		} else {
-			info.Matches += 1
+			info.Matches++
 		}
 
 		if ppa.Short() == ppaShort {

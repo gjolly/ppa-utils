@@ -19,8 +19,8 @@ func main() {
 	}
 
 	if config.OutputFormat == "json" {
-		ppaJson, _ := json.Marshal(ppas)
-		fmt.Printf("%s\n", ppaJson)
+		ppaJSON, _ := json.Marshal(ppas)
+		fmt.Printf("%s\n", ppaJSON)
 	}
 
 	if config.OutputFormat == "text" {
