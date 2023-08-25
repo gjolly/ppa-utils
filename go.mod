@@ -1,4 +1,4 @@
-module github.com/gjolly/install-ppa
+module github.com/gjolly/ppa-utils
 
 go 1.20
 

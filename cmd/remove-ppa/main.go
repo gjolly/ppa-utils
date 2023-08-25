@@ -10,7 +10,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/gjolly/install-ppa/pkg/ppa"
+	"github.com/gjolly/ppa-utils/pkg/ppa"
 )
 
 func main() {
