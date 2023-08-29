@@ -22,7 +22,7 @@ jobs:
       run: make
     
     - name: Tarball
-      run: tar czvf ppa-utils.tar.gz build/*
+      run: tar -C ./build -czvf ppa-utils.tar.gz .
 
     - uses: ncipollo/release-action@v1
       with:
