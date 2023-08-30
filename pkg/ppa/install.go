@@ -1,11 +1,8 @@
-package main
+package ppa
 
 import (
-	"errors"
-	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path"
@@ -14,80 +11,37 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp/armor"
 )
 
-type Config struct {
-	PPAName       string
-	APTConfigPath string
-	Distro        string
-	KeyID         string
-}
-
-func main() {
-	config, err := parseArgs()
+func Install(aptConfigPath, ppaName, distro, keyID string) error {
+	ppaURL, err := getPPAURL(ppaName)
 	if err != nil {
-		log.Fatal("invalid arguments", err)
+		return fmt.Errorf("failed to get PPA url for '%v': %v", ppaName, err)
 	}
 
-	ppaURL, err := getPPAURL(config.PPAName)
-	if err != nil {
-		log.Fatalf("failed to get PPA url for '%v': %v", config.PPAName, err)
-	}
+	keyURL, err := getKeyURL(keyID)
 
-	keyURL, err := getKeyURL(config.KeyID)
-
-	baseFileName := generateBaseFileName(config.PPAName)
-	keyPathAbs := path.Join(config.APTConfigPath, "keyrings", baseFileName+".gpg")
+	baseFileName := generateBaseFileName(ppaName)
+	keyPathAbs := path.Join(aptConfigPath, "keyrings", baseFileName+".gpg")
 	keyPathRel := path.Join("/etc/apt", "keyrings", baseFileName+".gpg")
-	sourcePath := path.Join(config.APTConfigPath, "sources.list.d", baseFileName+".list")
+	sourcePath := path.Join(aptConfigPath, "sources.list.d", baseFileName+".list")
 
 	err = downloadKey(keyURL, keyPathAbs)
 	if err != nil {
-		log.Fatal("failed to download key file", err)
+		return fmt.Errorf("failed to download key file: %v", err)
 	}
 
-	if config.Distro == "" {
-		config.Distro, err = getDistro()
+	if distro == "" {
+		distro, err = getDistro()
 		if err != nil {
-			log.Fatal("failed to get current distro, use --distro", err)
+			return fmt.Errorf("failed to get current distro, use --distro: %v", err)
 		}
 	}
 
-	err = writeSourceFile(ppaURL, config.Distro, sourcePath, keyPathRel)
+	err = writeSourceFile(ppaURL, distro, sourcePath, keyPathRel)
 	if err != nil {
-		log.Fatal("failed to write source file", err)
-	}
-}
-
-func parseArgs() (*Config, error) {
-	var config Config
-
-	// Define command line flags
-	ppaName := flag.String("ppa", "", "PPA Name")
-	aptConfigPath := flag.String("apt-config", "", "APT Config Path")
-	distro := flag.String("distro", "", "Distribution")
-	keyID := flag.String("key-id", "", "GPG key ID")
-
-	// Parse command line flags
-	flag.Parse()
-
-	// Check if required flags are provided
-	if *ppaName == "" {
-		flag.Usage()
-		return nil, errors.New("PPA name required")
-	}
-	if *keyID == "" {
-		flag.Usage()
-		return nil, errors.New("Key ID required")
-	}
-	config.PPAName = *ppaName
-	config.APTConfigPath = *aptConfigPath
-	config.Distro = *distro
-	config.KeyID = strings.ToLower(*keyID)
-
-	if *aptConfigPath == "" {
-		config.APTConfigPath = "/etc/apt"
+		return fmt.Errorf("failed to write source file: %v", err)
 	}
 
-	return &config, nil
+	return nil
 }
 
 func getPPAURL(PPAName string) (string, error) {

@@ -12,7 +12,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 )
 
-func ListPPAs(directory string) ([]*PPA, error) {
+func List(directory string) ([]*PPA, error) {
 	var PPAs []*PPA
 
 	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {

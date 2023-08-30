@@ -1,34 +1,16 @@
-package main
+package ppa
 
 import (
 	"bufio"
-	"errors"
-	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"strings"
-
-	"github.com/gjolly/ppa-utils/pkg/ppa"
 )
 
-func main() {
-	config, err := parseArgs()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	err = removePPA(config.PPAName, config.DryRun, config.APTConfigPath)
-	if err != nil {
-		log.Fatal("failed to remove PPAs:", err)
-	}
-}
-
-func removePPA(ppaShort string, dryrun bool, aptConfPath string) error {
-	path.Join(aptConfPath, "sources.list.d")
-	ppas, err := ppa.ListPPAs(aptConfPath)
+func Remove(aptConfigPath, ppaShort string, dryRun bool) error {
+	path.Join(aptConfigPath, "sources.list.d")
+	ppas, err := List(aptConfigPath)
 	if err != nil {
 		return err
 	}
@@ -49,7 +31,7 @@ func removePPA(ppaShort string, dryrun bool, aptConfPath string) error {
 			info.Matches++
 		}
 
-		keyringFilePath := path.Join(aptConfPath, "keyrings", path.Base(ppa.KeyringFile))
+		keyringFilePath := path.Join(aptConfigPath, "keyrings", path.Base(ppa.KeyringFile))
 		if info, ok := keyringFiles[keyringFilePath]; !ok {
 			keyringFiles[keyringFilePath] = &fileInfo{
 				Matches:  1,
@@ -89,16 +71,16 @@ func removePPA(ppaShort string, dryrun bool, aptConfPath string) error {
 		}
 	}
 
-	PPA, err := ppa.NewFromShort(ppaShort)
+	PPA, err := NewFromShort(ppaShort)
 	if err != nil {
 		return err
 	}
 
 	for _, file := range sourceFilesToEdit {
-		err = editSourceFile(file, PPA, dryrun)
+		err = editSourceFile(file, PPA, dryRun)
 	}
 
-	err = deleteFiles(filesToRemove, dryrun)
+	err = deleteFiles(filesToRemove, dryRun)
 	if err != nil {
 		return err
 	}
@@ -106,7 +88,7 @@ func removePPA(ppaShort string, dryrun bool, aptConfPath string) error {
 	return nil
 }
 
-func editSourceFile(path string, PPA *ppa.PPA, dryrun bool) error {
+func editSourceFile(path string, PPA *PPA, dryrun bool) error {
 	if dryrun {
 		fmt.Fprintf(os.Stderr, "[dryrun] removing PPA line from file: %v\n", path)
 		return nil
@@ -149,33 +131,4 @@ func deleteFiles(files []string, dryrun bool) error {
 		os.Remove(file)
 	}
 	return nil
-}
-
-type Config struct {
-	PPAName       string
-	DryRun        bool
-	APTConfigPath string
-}
-
-func parseArgs() (*Config, error) {
-	var config Config
-
-	name := flag.String("ppa", "", "PPA to remove")
-	dryrun := flag.Bool("dryrun", false, "PPA to remove")
-	aptConfigPath := flag.String("apt-config", "", "APT Config Path")
-
-	flag.Parse()
-
-	config.PPAName = *name
-	if config.PPAName == "" {
-		return &config, errors.New("-ppa cannot be empty")
-	}
-	config.DryRun = *dryrun
-
-	config.APTConfigPath = *aptConfigPath
-	if *aptConfigPath == "" {
-		config.APTConfigPath = "/etc/apt"
-	}
-
-	return &config, nil
 }
