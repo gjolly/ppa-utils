@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path"
 
@@ -26,25 +25,27 @@ var (
 	listPPACmd = &cobra.Command{
 		Use:   "list",
 		Short: "list PPAs installed on the system",
-		Run:   list,
+		RunE:  list,
 	}
 	removePPACmd = &cobra.Command{
-		Use:   "remove",
+		Use:   "remove ppa:<owner>/<name>",
 		Short: "remove a PPA installed on the system",
-		Run:   remove,
+		Args:  cobra.ExactArgs(1),
+		RunE:  remove,
 	}
 	installPPACmd = &cobra.Command{
-		Use:   "install",
+		Use:   "install ppa:<owner>/<name>",
 		Short: "install a new PPA on the system",
-		Run:   install,
+		Args:  cobra.ExactArgs(1),
+		RunE:  install,
 	}
 )
 
-func list(cmd *cobra.Command, args []string) {
+func list(cmd *cobra.Command, args []string) error {
 	sourceListDir := path.Join(aptConfig, "sources.list.d")
 	ppas, err := ppa.List(sourceListDir)
 	if err != nil {
-		log.Fatal("failed to list PPAs:", err)
+		return err
 	}
 
 	if outputFormat == "json" {
@@ -57,27 +58,27 @@ func list(cmd *cobra.Command, args []string) {
 			fmt.Printf("ppa:%v/%v\n", ppa.Owner, ppa.Name)
 		}
 	}
+
+	return nil
 }
 
-func install(cmd *cobra.Command, args []string) {
-	ppa.Install(aptConfig, ppaName, distro, keyID)
+func install(cmd *cobra.Command, args []string) error {
+	return ppa.Install(aptConfig, args[0], distro, keyID)
 }
 
-func remove(cmd *cobra.Command, args []string) {
-	ppa.Remove(aptConfig, ppaName, dryRun)
+func remove(cmd *cobra.Command, args []string) error {
+	return ppa.Remove(aptConfig, args[0], dryRun)
 }
 
 func init() {
-	rootCmd.Flags().StringP("apt-config", "c", "/etc/apt", "path to the APT config")
+	rootCmd.PersistentFlags().StringVarP(&aptConfig, "apt-config", "c", "/etc/apt", "path to the APT config")
 
-	installPPACmd.Flags().StringVarP(&ppaName, "ppa", "p", "", "PPA name formated as followed: ppa:<owner>/<name>")
 	installPPACmd.Flags().StringVarP(&keyID, "key-id", "k", "", "Fingerprint of the key used to signed packages installed form this PPA")
 	installPPACmd.Flags().StringVarP(&distro, "distro", "d", "", "Targeted distro")
 	installPPACmd.MarkFlagRequired("ppa")
 
 	listPPACmd.Flags().StringVarP(&outputFormat, "format", "f", "text", "Output format")
 
-	removePPACmd.Flags().StringVarP(&ppaName, "ppa", "p", "", "PPA name formated as followed: ppa:<owner>/<name>")
 	removePPACmd.Flags().BoolVarP(&dryRun, "dryrun", "d", false, "dryrun")
 	removePPACmd.MarkFlagRequired("ppa")
 

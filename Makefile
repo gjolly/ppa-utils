@@ -1,6 +1,5 @@
 all:
-	mkdir -p build
-	go build -o build ./...
+	go build -o ppa
 
 clean:
-	rm -rf ./build
+	rm -f ppa
